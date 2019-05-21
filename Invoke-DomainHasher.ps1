@@ -136,9 +136,7 @@ $unknownHashes | export-csv -notype "$OutDirectory\unknown.csv"
 $knownHashes | export-csv -notype "$OutDirectory\known.csv"
 $unknownHashes | ConvertTo-Json | out-file "$OutDirectory\unknown.json"
 $knownHashes | ConvertTo-Json | out-file "$OutDirectory\known.json"
-
 }
-
 
 }
 function hashDomain($serverListArray, $fast){
@@ -165,7 +163,7 @@ foreach ($remoteServer in $serverListArray){
 		param($foldername)
 		try{
 		# Get file path on remote server
-        if($foldername -like "full-output"){
+        if($foldername -like "*full-output*"){
 		$filePath = Get-ChildItem -Path "FileSystem::\\$using:remoteServer\`C$\" -Include *.exe*,*.dll -Recurse –File | Get-FileHash -Algorithm SHA1 | Select-Object -Property Hash,Path,@{Name='Hostname';Expression={$remoteServer}} | export-csv  "$foldername\$using:remoteServer.csv" -NoType 
         }else{
         $filePath = Get-ChildItem -Path "FileSystem::\\$using:remoteServer\`C$\Users\" -Include *.exe*,*.dll -Recurse –File | Get-FileHash -Algorithm SHA1 | Select-Object -Property Hash,Path,@{Name='Hostname';Expression={$remoteServer}} | export-csv  "$foldername\$using:remoteServer.csv" -NoType 
