@@ -42,3 +42,4 @@ https://www.nist.gov/itl/ssd/software-quality-group/nsrl-download
 # TODO
 - [ ] Improve output method
 - [ ] Improve performance of sorting and searching parts
+- [ ] Code improvements. This is just POC tool for now
