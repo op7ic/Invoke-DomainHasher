@@ -1,5 +1,5 @@
 # Overview
-This is a PowerShell script which will attempt to enumerate binaries in windows domain enviroment and compare collected list against known hash set from [NIST NSRL](https://www.nist.gov/itl/ssd/software-quality-group/nsrl-download). Any binary which is present in the enviroment and not listed on NIST dataset should be considered as potential source of intelligence for Threat Hunting. Resulting list of binaries are not necessary malicious however external hash check (i.e. VirusTotal) should be performed to verify this.  
+This is a PowerShell script which will attempt to enumerate binaries in windows domain enviroment and compare collected list against known hash set from [NIST NSRL](https://www.nist.gov/itl/ssd/software-quality-group/nsrl-download). Any binary which is present in the enviroment and not listed on NIST dataset could be considered as potential source of intelligence for Threat Hunting. Resulting list of binaries are not necessary malicious however external hash check (i.e. VirusTotal) should be performed to verify this.  
 
 # Running
 
@@ -41,3 +41,4 @@ https://www.nist.gov/itl/ssd/software-quality-group/nsrl-download
 # TODO
 - [ ] Improve output method
 - [ ] Improve performance of sorting and searching parts
+- [ ] Add JSON output
