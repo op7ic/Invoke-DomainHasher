@@ -100,7 +100,8 @@ $unknownHashes = [System.Collections.ArrayList]@()
 # TODO: improve performance here - for full scan this is really slow
 $knownHashes = [System.Collections.ArrayList]@()
 foreach($file in $files){
- $content = Import-Csv $file.FullName
+ $content += Import-Csv $file.FullName
+}
  $content | foreach-object {
  if(sls $_.Hash $csvBlock -ca){
  # hashes we know about we still want to store in some sort of CSV
@@ -124,7 +125,7 @@ foreach($file in $files){
     $unknownHashes.Add($unknown) | out-null
    }
   }
- }
+ 
 if (Test-Path $OutDirectory) {
 $unknownHashes | export-csv -notype "$OutDirectory\unknown.csv"
 $knownHashes | export-csv -notype "$OutDirectory\known.csv"
