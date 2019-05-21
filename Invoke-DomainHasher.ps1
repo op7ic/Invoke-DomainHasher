@@ -125,7 +125,8 @@ foreach($file in $files){
     $unknownHashes.Add($unknown) | out-null
    }
   }
- 
+Write-Host "[+] Found $($unknownHashes.Count) Unknown Hashes"
+Write-Host "[+] Found $($knownHashes.Count) Known Hashes"
 if (Test-Path $OutDirectory) {
 $unknownHashes | export-csv -notype "$OutDirectory\unknown.csv"
 $knownHashes | export-csv -notype "$OutDirectory\known.csv"
