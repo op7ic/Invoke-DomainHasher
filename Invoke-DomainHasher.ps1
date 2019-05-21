@@ -79,8 +79,6 @@ if(!(Test-Path $unpackdirectory) -and !(Test-Path $unpacked_sorted_NSRL) -and (T
 	}else{
 	Write-Output "[-] Unable to download RDS file. Download Manually and place in hashset directory from https://s3.amazonaws.com/rds.nsrl.nist.gov/RDS/current/rds_modernm.zip"
 	}
-}else{
-	Write-Output "[-] Missing or corrupted RDS file. Attempting download"
 }
 
 }
