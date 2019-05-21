@@ -24,7 +24,7 @@ Options:
 
 # False Positivies
 
-Using this method of checking for binaries can yeld a lot of false positivites. Not every legitimate binary is present on NIST NSRL index. Results should be therefore verified using third party tools such as VirusTotal.
+Using this method of checking for binaries can result in a lot of false positivites. Not every legitimate binary is present on NIST NSRL index. Results should be therefore verified using third party tools such as VirusTotal.
 
 # Process
 The script will perform following actions:
