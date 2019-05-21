@@ -33,7 +33,8 @@ The script will perform following actions:
 * For each identified system, create hashlist of either (fast mode) C:\Users\* folders or (full mode) C$ share
 * For each identified system, store results in either .\fast-output or .\full-output depending on selected option
 * For each identified system, compare the lists (CSV) stored in .\fast-output or .\full-output with master set of NIST hashes and single out anything that is not in the NIST hash
-* For every hash not in the NIST dataset check for signature, time of appearance and other binary details, write the result to output.csv file in .\combined-output folder
+* For every hash not in the NIST dataset check for signature, time of appearance and other binary details, write the result to .\combined-output folder. 
+* Both known and unknown files are written to .\combined-output folder in CSV and JSON formats
 
 # Sources of Inspiration
 https://www.nist.gov/itl/ssd/software-quality-group/nsrl-download
@@ -41,4 +42,3 @@ https://www.nist.gov/itl/ssd/software-quality-group/nsrl-download
 # TODO
 - [ ] Improve output method
 - [ ] Improve performance of sorting and searching parts
-- [ ] Add JSON output
