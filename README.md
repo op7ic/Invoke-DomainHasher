@@ -22,6 +22,10 @@ Options:
   -help      Show this help menu
 ```
 
+# Output 
+
+Files will be stored in .\combined-output folder. There should be four files at the end of execution; two files for known and unknown binaries in CSV fomrat and two JSON files with the same content.
+
 # False Positivies
 
 Using this method of checking for binaries can result in a lot of false positivises. Not every legitimate binary is present on NIST NSRL index. Results should be therefore verified using third party tools such as VirusTotal.
