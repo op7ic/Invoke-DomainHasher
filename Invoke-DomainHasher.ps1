@@ -99,6 +99,7 @@ $files= get-childitem ".\full-output\*" | select fullname
 $csvBlock = ".\hashset\dll_exe.NSRL.txt"
 # define new Array to store files not seen before
 $unknownHashes = [System.Collections.ArrayList]@()
+# TODO: improve performance here - for full scan this is really slow
 $knownHashes = [System.Collections.ArrayList]@()
 foreach($file in $files){
  $content = Import-Csv $file.FullName
