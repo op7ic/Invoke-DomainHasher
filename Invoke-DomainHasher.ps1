@@ -13,7 +13,7 @@ VERSION      DATE          AUTHOR
     Invoke-DomainHasher.ps1
   .HELP 
     -fast      Fast checks across across the domain (User profile folders only). Results stored in ./fast-output
-	-full      Full checks across across the domain (C$ share). Results stored in ./full-output
+	-full      Full checks across the domain (all exe and dll files from C$ share). Results stored in .\full-output.
 #>
 
 Add-Type -AssemblyName System.IO.Compression -ErrorAction Stop
@@ -25,8 +25,8 @@ Write-Host @"
 Usage: powershell .\Invoke-DomainHasher.ps1 [options]
 
 Options:
-  -fast      (default) Fast checks across across the domain (User profile folders only). Results stored in .\fast-output
-  -full      Full checks across across the domain (C$ share). Results stored in .\full-output
+  -fast      (default) Fast checks across the domain (User profile folders only - C:\Users\*). Results stored in .\fast-output
+  -full      Full checks across the domain (all exe and dll files from C$ share). Results stored in .\full-output. **Slow**
   -help      Show this help menu
 "@
 }
@@ -87,6 +87,7 @@ if(!(Test-Path $unpackdirectory) -and !(Test-Path $unpacked_sorted_NSRL) -and (T
 
 
 function compareandsearch($type){
+Write-Output "[+] Searching Index"
 $OutDirectory =".\combined-output"
 if ($type){
 # All of CSV files
