@@ -32,143 +32,125 @@ Options:
 }
 
 function checkbenignarchive(){
-$location = ".\hashset\rds_modernm.zip"
+$location = Resolve-Path ".\hashset\rds_modernm.zip"
 if(!(test-path $location)) {
     $url = "https://s3.amazonaws.com/rds.nsrl.nist.gov/RDS/current/rds_modernm.zip"
      try{
 	 $req = Invoke-WebRequest -Uri $url -OutFile "$location" -ErrorAction:Stop -TimeoutSec 10
-	 Write-Host "[+] Tool downloaded and stored in tools folder"
+	 Write-Host "[+] rds_modernm downloaded and stored in hashset folder"
 	 return $true
 	 }catch{
 	 Write-Host "[!] Rds_modernm.zip is missing and unable to download from $url. Please download this file and place it in hashset folder manually"
 	 return $false
 	 }
 }else{
-If ((Get-Item $location).length -gt 0kb) {
 Write-Output "[+] RDS hashset located in hashset directory. Continue"
-}else{
-Write-Host "[!] RDS file 0 size"
-return $false
-}
 return $true
 }
 
 }
 
-# function taken from https://stackoverflow.com/questions/27768303/how-to-unzip-a-file-in-powershell
+# based on https://serverfault.com/questions/18872/how-to-zip-unzip-files-in-powershell
 function cleanupNSRL(){
+#Hardcoded locations
+$unpacked_sorted_NSRL= ".\hashset\dll_exe.NSRL.txt"
+$unpackedNSRL= ".\hashset\unpacked_rds_modernm\NSRLFile.txt"
+$path = (Convert-Path .) + "\hashset\rds_modernm.zip"
+$unpackdirectory = (Convert-Path .) + "\hashset\unpacked_rds_modernm"
 
-$location = ".\hashset\rds_modernm.zip"
-$destinationPath = ".\hashset\unpacked_rds_modernm"
-$unpacked_sorted_NSRL=".\hashset\dll_exe.NSRL.txt"
-
-#if sorted NSRL doesn't exist then unpack
-if (!(Test-Path $unpacked_sorted_NSRL)){
-Write-Output "[!] Unpacking and sorting NSRL archive"
-
-$archiveFile = [System.IO.File]::Open($location, [System.IO.FileMode]::Open)
-$archive = [System.IO.Compression.ZipArchive]::new($archiveFile)	
-
- if (Test-Path $destinationPath) {
-        foreach ($item in $archive.Entries) {
-            $destinationItemPath = [System.IO.Path]::Combine($destinationPath, $item.FullName)
-
-            if ($destinationItemPath -like '*/') {
-                New-Item $destinationItemPath -Force -ItemType Directory > $null
-            } else {
-                New-Item $destinationItemPath -Force -ItemType File > $null
-
-                [System.IO.Compression.ZipFileExtensions]::ExtractToFile($item, $destinationItemPath, $true)
-            }
-        }
-    } else {
-        [System.IO.Compression.ZipFileExtensions]::ExtractToDirectory($archive, $destinationPath)
-    }
-# Finally just get out .exe and .dll. We will use dll_exe.NSRL.txt file for matching
-Select-String -Path ".\hashset\unpacked_rds_modernm\NSRLFile.txt" -Pattern ".exe",".dll" | out-file $unpacked_sorted_NSRL
-
-}else{ # otherwise unzip and unpack
-Write-Output "[+] Sorted RDS hashet in hashset directory. Continue"
+# Check if output directory exists. Powershell 2.0 unzip version
+if(!(Test-Path $unpackdirectory) -and !(Test-Path $unpacked_sorted_NSRL) -and (Test-Path $path)){
+	New-Item -ItemType Directory -Path $unpackdirectory | Out-Null 
+	$shellApplication = new-object -com shell.application
+	$zipPackage = $shellApplication.NameSpace($path)
+	$destinationFolder = $shellApplication.NameSpace($unpackdirectory)
+	$destinationFolder.CopyHere($zipPackage.Items())
+	# Finally just get out .exe and .dll. We will use dll_exe.NSRL.txt file for matching
+	Select-String -Path (Resolve-Path $unpackedNSRL) -Pattern ".exe",".dll" | out-file $unpacked_sorted_NSRL
+	Write-Output "[+] Sorted RDS hashet in hashset directory. Continue"
+	Write-Output "[+] Removing directory unpacked_rds_modernm"
+	Delete-Item -ItemType Directory -Path $unpackdirectory
+}elseif ((Test-Path $unpacked_sorted_NSRL) -and (Test-Path $path)){
+	Write-Output "[+] Sorted RDS hashet already in hashset directory. Continue"
+}elseif(!(Test-Path $path)) {
+	Write-Output "[-] Missing RDS file. Attempting download & unload"
+	if(checkbenignarchive){
+		cleanupNSRL
+	}else{
+	Write-Output "[-] Unable to download RDS file. Download Manually and place in hashset directory from https://s3.amazonaws.com/rds.nsrl.nist.gov/RDS/current/rds_modernm.zip"
+	}
+}else{
+	Write-Output "[-] Missing or corrupted RDS file. Attempting download"
 }
+
 }
+
 
 function compareandsearch($type){
 $OutDirectory =".\combined-output"
 if ($type){
 # All of CSV files
 $files= get-childitem ".\fast-output\*" | select fullname
+}else{
+$files= get-childitem ".\full-output\*" | select fullname
+}
 # hashset with dll/exe files
 $csvBlock = ".\hashset\dll_exe.NSRL.txt"
 # define new Array to store files not seen before
-$results = [System.Collections.ArrayList]@()
+$unknownHashes = [System.Collections.ArrayList]@()
+$knownHashes = [System.Collections.ArrayList]@()
 foreach($file in $files){
  $content = Import-Csv $file.FullName
  $content | foreach-object {
  if(sls $_.Hash $csvBlock -ca){
- # hashes we know about we don't really care about so we don't write them down
+ # hashes we know about we still want to store in some sort of CSV
+    $known =  New-object PSObject
+    $known | Add-member -type Noteproperty -Name Hash -Value $_.Hash.ToString()
+    $known | Add-member -type Noteproperty -Name Path -Value $_.Path.ToString()
+    $known | Add-member -type Noteproperty -Name Hostname  -Value $_.Hostname.ToString()
+    $known | Add-member -type Noteproperty -Name LastWrite -Value (Get-Item -Path $_.Path.ToString() | select-object LastWriteTime)
+	$known | Add-member -type Noteproperty -Name OriginalName -Value ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($_.Path.ToString()).FileDescription)
+    $known | Add-member -type Noteproperty -Name Signed -Value ((get-AuthenticodeSignature $_.Path.ToString()).SignerCertificate.Status)
+    $knownHashes.Add($known) | out-null
  }else{
  # save every line that we don't know about
-    $result =  New-object PSObject
-    $result | Add-member -type Noteproperty -Name Hash -Value $_.Hash.ToString()
-    $result | Add-member -type Noteproperty -Name Path -Value $_.Path.ToString()
-    $result | Add-member -type Noteproperty -Name Hostname  -Value $_.Hostname.ToString()
-    $result | Add-member -type Noteproperty -Name LastWrite -Value (Get-ItemProperty -Path $_.Path.ToString() -Name LastWriteTime)
-	$result | Add-member -type Noteproperty -Name OriginalName -Value ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($_.Path.ToString()).FileDescription)
-    $results.Add($result) | out-null
+    $unknown =  New-object PSObject
+    $unknown | Add-member -type Noteproperty -Name Hash -Value $_.Hash.ToString()
+    $unknown | Add-member -type Noteproperty -Name Path -Value $_.Path.ToString()
+    $unknown | Add-member -type Noteproperty -Name Hostname  -Value $_.Hostname.ToString()
+    $unknown | Add-member -type Noteproperty -Name LastWrite -Value (Get-Item -Path $_.Path.ToString() | select-object LastWriteTime)
+	$unknown | Add-member -type Noteproperty -Name OriginalName -Value ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($_.Path.ToString()).FileDescription)
+    $unknown | Add-member -type Noteproperty -Name Signed -Value ((get-AuthenticodeSignature $_.Path.ToString()).SignerCertificate.Status)
+    $unknownHashes.Add($unknown) | out-null
    }
   }
  }
 if (Test-Path $OutDirectory) {
-$results | export-csv -notype "output.csv"
+$unknownHashes | export-csv -notype "$OutDirectory\unknown.csv"
+$knownHashes | export-csv -notype "$OutDirectory\known.csv"
 }else{
 New-Item $OutDirectory -Force -ItemType Directory > $null
-$results | export-csv -notype "$OutDirectory\output.csv"
+$unknownHashes | export-csv -notype "$OutDirectory\unknown.csv"
+$knownHashes | export-csv -notype "$OutDirectory\known.csv"
 }
 
+}
+
+}
+function hashDomain($serverListArray, $fast){
+#Depending on scan type we use different directories
+if ($fast){
+$directoryOutput=(Convert-Path .) + "\fast-output"
 }else{
-# All of CSV files
-$files= get-childitem ".\slow-output\*" | select fullname
-# hashset with dll/exe files
-$csvBlock = ".\hashset\dll_exe.NSRL.txt"
-# define new Array to store files not seen before
-$results = [System.Collections.ArrayList]@()
-foreach($file in $files){
- $content = Import-Csv $file.FullName
- $content | foreach-object {
- if(sls $_.Hash $csvBlock -ca){
- # hashes we know about we don't really care about so we don't write them down
- }else{
- # save every line that we don't know about
-    $result =  New-object PSObject
-    $result | Add-member -type Noteproperty -Name Hash -Value $_.Hash.ToString()
-    $result | Add-member -type Noteproperty -Name Path -Value $_.Path.ToString()
-    $result | Add-member -type Noteproperty -Name Hostname  -Value $_.Hostname.ToString()
-    $result | Add-member -type Noteproperty -Name LastWrite -Value (Get-ItemProperty -Path $_.Path.ToString() -Name LastWriteTime)
-	$result | Add-member -type Noteproperty -Name OriginalName -Value ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($_.Path.ToString()).FileDescription)
-    $results.Add($result) | out-null
-   }
-  }
- }
-
-if (Test-Path $OutDirectory) {
-$results | export-csv -notype "output.csv"
-}else{
-New-Item $OutDirectory -Force -ItemType Directory > $null
-$results | export-csv -notype "$OutDirectory\output.csv"
+$directoryOutput=(Convert-Path .) +"\full-output"
 }
-}
-}
-
-
-
-function slowChecks($serverListArray){
-$directoryOutput=".\full-output"
+# Check if directory exists
 if (Test-Path $directoryOutput) {
 }else{
 New-Item $directoryOutput -Force -ItemType Directory > $null
 }
 
-	foreach ($remoteServer in $serverListArray){
+foreach ($remoteServer in $serverListArray){
 	# control running jobs, max 4 
 	$running = @(Get-Job | Where-Object { $_.State -eq 'Running' })
 	if ($running.Count -ge 4) {
@@ -176,15 +158,20 @@ New-Item $directoryOutput -Force -ItemType Directory > $null
     }
 	Write-Host "[+] Starting hashing for $remoteServer"
 	Start-Job {
+		param($foldername)
 		try{
 		# Get file path on remote server
-		$filePath = Get-ChildItem -Path "FileSystem::\\$using:remoteServer\`C$\" -Include *.exe*,*.dll -Recurse –File | Get-FileHash -Algorithm SHA1 | Select-Object -Property Hash,Path,@{Name='Hostname';Expression={$remoteServer}} | Export-CSV ".\full-output\$using:remoteServer.csv"
-		# Return hash/filepath only
+        if($foldername -like "full-output"){
+		$filePath = Get-ChildItem -Path "FileSystem::\\$using:remoteServer\`C$\" -Include *.exe*,*.dll -Recurse –File | Get-FileHash -Algorithm SHA1 | Select-Object -Property Hash,Path,@{Name='Hostname';Expression={$remoteServer}} | export-csv  "$foldername\$using:remoteServer.csv" -NoType 
+        }else{
+        $filePath = Get-ChildItem -Path "FileSystem::\\$using:remoteServer\`C$\Users\" -Include *.exe*,*.dll -Recurse –File | Get-FileHash -Algorithm SHA1 | Select-Object -Property Hash,Path,@{Name='Hostname';Expression={$remoteServer}} | export-csv  "$foldername\$using:remoteServer.csv" -NoType 
+        }
+        # Return hash/filepath only
         return "$true"
 		}catch{
 		return $Null
 		}
-    } | Out-Null
+    } -Arg $directoryOutput | Out-Null
 		
 }#EOF foreach
 
@@ -195,59 +182,18 @@ Wait-Job * | Out-Null
 foreach($job in Get-Job)
 {
     $result = Receive-Job $job
-    Write-Host $result
-}
-Remove-Job -State Completed
-
-}
-
-
-function fastChecks($serverListArray){
-$directoryOutput=".\fast-output"
-if (Test-Path $directoryOutput) {
-}else{
-New-Item $directoryOutput -Force -ItemType Directory > $null
-}
-	foreach ($remoteServer in $serverListArray){
-	# control running jobs, max 4 
-	$running = @(Get-Job | Where-Object { $_.State -eq 'Running' })
-	if ($running.Count -ge 4) {
-	    $running | Wait-Job -Any | Out-Null
-    }
-	Write-Host "[+] Starting hashing for $remoteServer"
-	Start-Job {
-	    try{
-		# Get file path on remote server
-		$filePath = Get-ChildItem -Path "FileSystem::\\$using:remoteServer\`C$\Users" -Include *.exe*,*.dll -Recurse –File | Get-FileHash -Algorithm SHA1 | Select-Object -Property Hash,Path,@{Name='Hostname';Expression={$remoteServer}} | Export-CSV ".\fast-output\$using:remoteServer.csv"
-        return "$true"
-		}catch{
-		return $Null
-		}
-    } | Out-Null
-		
-}#EOF foreach
-
-# Wait for all jobs to complete and results ready to be received
-Wait-Job * | Out-Null
-
-# Process the results
-foreach($job in Get-Job)
-{
-    $result = Receive-Job $job
-    Write-Host $result
 }
 Remove-Job -State Completed
 }
-
-
 
 function domainHasher($fast){
 
 write-host "-=[ Invoke-DomainHasher 0.3A ]=-"
 write-host "      by op7ic        "
 
-#call to check if we got all the files and they are sorted
+#Check if all files are in place
 if (checkbenignarchive){
+#cleanup and extract only .exe and .dll hash
 cleanupNSRL
 }else{
 Write-Host "[!] Rds_modernm.zip is missing and unable to download from $url. Please download this file and place it in .\hashset folder manually before restarting this script"
@@ -274,10 +220,10 @@ foreach ($i in $colResults)
 }
 
 if ($fast -eq $true){
-	fastChecks($serverListArray)
+	hashDomain $serverListArray $true 
 	compareandsearch($true)
 }else{
-	slowChecks($serverListArray)
+	hashDomain $serverListArray $false 
 	compareandsearch($false)
 }
 
