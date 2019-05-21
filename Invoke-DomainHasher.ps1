@@ -111,7 +111,7 @@ foreach($file in $files){
     $known | Add-member -type Noteproperty -Name Hostname  -Value $_.Hostname.ToString()
     $known | Add-member -type Noteproperty -Name LastWrite -Value (Get-Item -Path $_.Path.ToString() | select-object LastWriteTime)
 	$known | Add-member -type Noteproperty -Name OriginalName -Value ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($_.Path.ToString()).FileDescription)
-    $known | Add-member -type Noteproperty -Name Signed -Value ((get-AuthenticodeSignature $_.Path.ToString()).SignerCertificate.Status)
+    $known | Add-member -type Noteproperty -Name Signed -Value ((get-AuthenticodeSignature $_.Path.ToString()).SignerCertificate.Issuer)
     $knownHashes.Add($known) | out-null
  }else{
  # save every line that we don't know about
@@ -121,7 +121,7 @@ foreach($file in $files){
     $unknown | Add-member -type Noteproperty -Name Hostname  -Value $_.Hostname.ToString()
     $unknown | Add-member -type Noteproperty -Name LastWrite -Value (Get-Item -Path $_.Path.ToString() | select-object LastWriteTime)
 	$unknown | Add-member -type Noteproperty -Name OriginalName -Value ([System.Diagnostics.FileVersionInfo]::GetVersionInfo($_.Path.ToString()).FileDescription)
-    $unknown | Add-member -type Noteproperty -Name Signed -Value ((get-AuthenticodeSignature $_.Path.ToString()).SignerCertificate.Status)
+    $unknown | Add-member -type Noteproperty -Name Signed -Value ((get-AuthenticodeSignature $_.Path.ToString()).SignerCertificate.Issuer)
     $unknownHashes.Add($unknown) | out-null
    }
   }
