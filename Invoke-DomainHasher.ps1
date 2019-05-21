@@ -128,13 +128,17 @@ foreach($file in $files){
 if (Test-Path $OutDirectory) {
 $unknownHashes | export-csv -notype "$OutDirectory\unknown.csv"
 $knownHashes | export-csv -notype "$OutDirectory\known.csv"
+$unknownHashes | ConvertTo-Json | out-file "$OutDirectory\unknown.json"
+$knownHashes | ConvertTo-Json | out-file "$OutDirectory\known.json"
 }else{
 New-Item $OutDirectory -Force -ItemType Directory > $null
 $unknownHashes | export-csv -notype "$OutDirectory\unknown.csv"
 $knownHashes | export-csv -notype "$OutDirectory\known.csv"
-}
+$unknownHashes | ConvertTo-Json | out-file "$OutDirectory\unknown.json"
+$knownHashes | ConvertTo-Json | out-file "$OutDirectory\known.json"
 
 }
+
 
 }
 function hashDomain($serverListArray, $fast){
