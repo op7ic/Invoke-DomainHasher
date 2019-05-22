@@ -100,7 +100,7 @@ $unknownHashes = [System.Collections.ArrayList]@()
 # TODO: improve performance here - for full scan this is really slow
 $knownHashes = [System.Collections.ArrayList]@()
 foreach($file in $files){
- $content += Import-Csv $file.FullName
+ $content += Import-Csv $file.FullName | sort Hash –Unique
 }
  $content | foreach-object {
  if(sls $_.Hash $csvBlock -ca){
