@@ -85,7 +85,6 @@ if(!(Test-Path $unpackdirectory) -and !(Test-Path $unpacked_sorted_NSRL) -and (T
 
 
 function compareandsearch($type){
-Write-Output "[+] Searching Index"
 $OutDirectory =".\combined-output"
 if ($type){
 # All of CSV files
@@ -102,6 +101,8 @@ $knownHashes = [System.Collections.ArrayList]@()
 foreach($file in $files){
  $content += Import-Csv $file.FullName | sort Hash –Unique
 }
+Write-Host "[+] Found $($content.Count) Unique Hashes Across Domain"
+Write-Output "[+] Searching Index"
  $content | foreach-object {
  if(sls $_.Hash $csvBlock -ca){
  # hashes we know about we still want to store in some sort of CSV
