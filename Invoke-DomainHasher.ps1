@@ -99,11 +99,13 @@ $unknownHashes = [System.Collections.ArrayList]@()
 # TODO: improve performance here - for full scan this is really slow
 $knownHashes = [System.Collections.ArrayList]@()
 foreach($file in $files){
+ # Add just unique hashes to content object
  $content += Import-Csv $file.FullName | sort Hash –Unique
 }
 Write-Host "[+] Found $($content.Count) Unique Hashes Across Domain"
 Write-Output "[+] Searching Index"
- $content | foreach-object {
+
+$content | foreach-object {
  if(sls $_.Hash $csvBlock -ca){
  # hashes we know about we still want to store in some sort of CSV
     $known =  New-object PSObject
@@ -125,7 +127,7 @@ Write-Output "[+] Searching Index"
     $unknown | Add-member -type Noteproperty -Name Signed -Value ((get-AuthenticodeSignature $_.Path.ToString()).SignerCertificate.Issuer)
     $unknownHashes.Add($unknown) | out-null
    }
-  }
+  } 
 Write-Host "[+] Found $($unknownHashes.Count) Unknown Hashes"
 Write-Host "[+] Found $($knownHashes.Count) Known Hashes"
 if (Test-Path $OutDirectory) {
