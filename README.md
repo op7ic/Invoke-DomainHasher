@@ -478,3 +478,11 @@ Get-ChildItem ".\DomainHasherResults\Scan_*\*\hashes.csv" -Recurse |
 ---
 
 **Remember**: This tool identifies unknown binaries, not necessarily malicious ones. Always verify findings through additional analysis before taking action. When in doubt, preserve evidence and consult with a security team.
+
+## License
+
+See LICENSE file
+
+## Disclaimer
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
